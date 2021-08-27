@@ -16,8 +16,13 @@
 package retrofit2;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
+
 import javax.annotation.Nullable;
+
 import okhttp3.FormBody;
 import okhttp3.Headers;
 import okhttp3.HttpUrl;
@@ -49,30 +54,41 @@ final class RequestBuilder {
    */
   private static final Pattern PATH_TRAVERSAL = Pattern.compile("(.*/)?(\\.|%2e|%2E){1,2}(/.*)?");
 
+  private final Retrofit retrofit;
   private final String method;
 
   private final HttpUrl baseUrl;
-  private @Nullable String relativeUrl;
-  private @Nullable HttpUrl.Builder urlBuilder;
+  private @Nullable
+  String relativeUrl;
+  private @Nullable
+  HttpUrl.Builder urlBuilder;
 
   private final Request.Builder requestBuilder;
   private final Headers.Builder headersBuilder;
-  private @Nullable MediaType contentType;
+  private @Nullable
+  MediaType contentType;
 
   private final boolean hasBody;
-  private @Nullable MultipartBody.Builder multipartBuilder;
-  private @Nullable FormBody.Builder formBuilder;
-  private @Nullable RequestBody body;
+  private @Nullable
+  MultipartBody.Builder multipartBuilder;
+  private @Nullable
+  FormBody.Builder formBuilder;
+  private @Nullable
+  RequestBody body;
+  private @Nullable
+  JsonFieldRequestBodyBuilder jsonFieldRequestBodyBuilder;
 
   RequestBuilder(
-      String method,
-      HttpUrl baseUrl,
-      @Nullable String relativeUrl,
-      @Nullable Headers headers,
-      @Nullable MediaType contentType,
-      boolean hasBody,
-      boolean isFormEncoded,
-      boolean isMultipart) {
+    Retrofit retrofit,
+    String method,
+    HttpUrl baseUrl,
+    @Nullable String relativeUrl,
+    @Nullable Headers headers,
+    @Nullable MediaType contentType,
+    boolean hasBody,
+    boolean isFormEncoded,
+    boolean isMultipart) {
+    this.retrofit = retrofit;
     this.method = method;
     this.baseUrl = baseUrl;
     this.relativeUrl = relativeUrl;
@@ -125,7 +141,7 @@ final class RequestBuilder {
     String newRelativeUrl = relativeUrl.replace("{" + name + "}", replacement);
     if (PATH_TRAVERSAL.matcher(newRelativeUrl).matches()) {
       throw new IllegalArgumentException(
-          "@Path parameters shouldn't perform path traversal ('.' or '..'): " + value);
+        "@Path parameters shouldn't perform path traversal ('.' or '..'): " + value);
     }
     relativeUrl = newRelativeUrl;
   }
@@ -135,9 +151,9 @@ final class RequestBuilder {
     for (int i = 0, limit = input.length(); i < limit; i += Character.charCount(codePoint)) {
       codePoint = input.codePointAt(i);
       if (codePoint < 0x20
-          || codePoint >= 0x7f
-          || PATH_SEGMENT_ALWAYS_ENCODE_SET.indexOf(codePoint) != -1
-          || (!alreadyEncoded && (codePoint == '/' || codePoint == '%'))) {
+        || codePoint >= 0x7f
+        || PATH_SEGMENT_ALWAYS_ENCODE_SET.indexOf(codePoint) != -1
+        || (!alreadyEncoded && (codePoint == '/' || codePoint == '%'))) {
         // Slow path: the character at i requires encoding!
         Buffer out = new Buffer();
         out.writeUtf8(input, 0, i);
@@ -151,18 +167,18 @@ final class RequestBuilder {
   }
 
   private static void canonicalizeForPath(
-      Buffer out, String input, int pos, int limit, boolean alreadyEncoded) {
+    Buffer out, String input, int pos, int limit, boolean alreadyEncoded) {
     Buffer utf8Buffer = null; // Lazily allocated.
     int codePoint;
     for (int i = pos; i < limit; i += Character.charCount(codePoint)) {
       codePoint = input.codePointAt(i);
       if (alreadyEncoded
-          && (codePoint == '\t' || codePoint == '\n' || codePoint == '\f' || codePoint == '\r')) {
+        && (codePoint == '\t' || codePoint == '\n' || codePoint == '\f' || codePoint == '\r')) {
         // Skip this character.
       } else if (codePoint < 0x20
-          || codePoint >= 0x7f
-          || PATH_SEGMENT_ALWAYS_ENCODE_SET.indexOf(codePoint) != -1
-          || (!alreadyEncoded && (codePoint == '/' || codePoint == '%'))) {
+        || codePoint >= 0x7f
+        || PATH_SEGMENT_ALWAYS_ENCODE_SET.indexOf(codePoint) != -1
+        || (!alreadyEncoded && (codePoint == '/' || codePoint == '%'))) {
         // Percent encode this character.
         if (utf8Buffer == null) {
           utf8Buffer = new Buffer();
@@ -187,7 +203,7 @@ final class RequestBuilder {
       urlBuilder = baseUrl.newBuilder(relativeUrl);
       if (urlBuilder == null) {
         throw new IllegalArgumentException(
-            "Malformed URL. Base: " + baseUrl + ", Relative: " + relativeUrl);
+          "Malformed URL. Base: " + baseUrl + ", Relative: " + relativeUrl);
       }
       relativeUrl = null;
     }
@@ -201,7 +217,8 @@ final class RequestBuilder {
     }
   }
 
-  @SuppressWarnings("ConstantConditions") // Only called when isFormEncoded was true.
+  @SuppressWarnings("ConstantConditions")
+    // Only called when isFormEncoded was true.
   void addFormField(String name, String value, boolean encoded) {
     if (encoded) {
       formBuilder.addEncoded(name, value);
@@ -210,12 +227,21 @@ final class RequestBuilder {
     }
   }
 
-  @SuppressWarnings("ConstantConditions") // Only called when isMultipart was true.
+  public void addJsonField(String name, Object value) {
+    if (jsonFieldRequestBodyBuilder == null) {
+      jsonFieldRequestBodyBuilder = new JsonFieldRequestBodyBuilder();
+    }
+    jsonFieldRequestBodyBuilder.addField(name, value);
+  }
+
+  @SuppressWarnings("ConstantConditions")
+    // Only called when isMultipart was true.
   void addPart(Headers headers, RequestBody body) {
     multipartBuilder.addPart(headers, body);
   }
 
-  @SuppressWarnings("ConstantConditions") // Only called when isMultipart was true.
+  @SuppressWarnings("ConstantConditions")
+    // Only called when isMultipart was true.
   void addPart(MultipartBody.Part part) {
     multipartBuilder.addPart(part);
   }
@@ -239,7 +265,7 @@ final class RequestBuilder {
       url = baseUrl.resolve(relativeUrl);
       if (url == null) {
         throw new IllegalArgumentException(
-            "Malformed URL. Base: " + baseUrl + ", Relative: " + relativeUrl);
+          "Malformed URL. Base: " + baseUrl + ", Relative: " + relativeUrl);
       }
     }
 
@@ -250,6 +276,8 @@ final class RequestBuilder {
         body = formBuilder.build();
       } else if (multipartBuilder != null) {
         body = multipartBuilder.build();
+      } else if (jsonFieldRequestBodyBuilder != null) {
+        body = jsonFieldRequestBodyBuilder.build(retrofit);
       } else if (hasBody) {
         // Body is absent, make an empty body.
         body = RequestBody.create(null, new byte[0]);
@@ -290,6 +318,29 @@ final class RequestBuilder {
     @Override
     public void writeTo(BufferedSink sink) throws IOException {
       delegate.writeTo(sink);
+    }
+  }
+
+  private static class JsonFieldRequestBodyBuilder {
+    private final LinkedHashMap<String, Object> jsonFields = new LinkedHashMap<>(4);
+
+    public void addField(String name, Object value) {
+      jsonFields.put(name, value);
+    }
+
+    public RequestBody build(Retrofit retrofit) {
+
+      Converter<Object, RequestBody> convert = retrofit.requestBodyConverter(
+        new Utils.ParameterizedTypeImpl(null, Map.class, String.class, Object.class),
+        new Annotation[0], new Annotation[0]
+      );
+
+      try {
+        return convert.convert(jsonFields);
+      } catch (IOException e) {
+        e.printStackTrace();
+        throw new IllegalArgumentException(e.getCause());
+      }
     }
   }
 }

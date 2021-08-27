@@ -20,7 +20,9 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Objects;
+
 import javax.annotation.Nullable;
+
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 
@@ -136,6 +138,22 @@ abstract class ParameterHandler<T> {
       if (queryValue == null) return; // Skip converted but null values
 
       builder.addQueryParam(name, queryValue, encoded);
+    }
+  }
+
+  static final class JsonField<T> extends ParameterHandler<T> {
+    private final String name;
+//    private final Converter<T, String> valueConverter;
+
+    JsonField(String name, Converter<T, String> valueConverter) {
+      this.name = Objects.requireNonNull(name, "name == null");
+//      this.valueConverter = valueConverter;
+    }
+
+    @Override
+    void apply(RequestBuilder builder, @Nullable T value) throws IOException {
+      if (value == null) return; // Skip null values.
+      builder.addJsonField(name, value);
     }
   }
 
