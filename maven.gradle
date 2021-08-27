@@ -1,0 +1,29 @@
+
+void addRepo(String mavenName, String propertiesFileName) {
+
+  File pFile = rootProject.file(propertiesFileName)
+  if (!pFile.exists()) {
+    return
+  }
+  Properties properties = new Properties()
+
+  pFile.withInputStream { stream ->
+    properties.load(stream)
+  }
+
+  publishing {
+    repositories {
+      maven {
+        name = mavenName
+        url = properties.getProperty("URL")
+        credentials {
+          username = properties.getProperty("USER_NAME")
+          password = properties.getProperty("PWD")
+        }
+      }
+    }
+  }
+}
+
+addRepo("nexus", "nexus.properties")
+addRepo("GithubPackages", "github.properties")

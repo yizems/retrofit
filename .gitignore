@@ -7,3 +7,5 @@ local.properties
 # Idea
 .idea
 *.iml
+nexus.properties
+github.properties
