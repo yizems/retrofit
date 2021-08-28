@@ -1,52 +1,82 @@
-Retrofit
-========
+# retrofit 修改版
 
-A type-safe HTTP client for Android and Java.
+版本号规则: 开源版本+`.x`; 例如开源版本为 2.10.0, 那么该库的版本号为 2.10.0.x
 
-For more information please see [the website][1].
+[原README](./原README.md)
+
+## 1. 特性增加
+
+### 1.1 JsonBody 和 JsonField 注解增加
+
+原本我们写`Json`请求是这样的:
+
+```kotlin
+class ApiService {
+  @Post("xxxx")
+  suspend fun login(@Body jsonStr: String): LoginRet
+
+  // 或
+  suspend fun login(@Body body: RequestBody/*或 Map 或 Bean */): LoginRet
+}
+```
+
+这样的请求我们很难从接口上看到需要什么参数, `Bean` 还好, 但是我们大多数只需要一个参数, 不适合给所有的接口都创建`JavaBean`, 使用 `Map` 或者 `body`
+又略显复杂,并且参数`key`需要多处编写(这里不考虑Model/Repository处理);
+
+所以有了这两个注解
+
+```kotlin
+@Post("xxxx")
+@JsonBody
+suspend fun login(@JsonField("userName") userName: String, @JsonField("pwd") pwd: String): LoginRet
+```
+
+这样就可以了,参数不一定是String的, 可以是任何可被Json序列化的对象
+
+组装的body内容为
+
+```json
+{
+  "userName": "xxx",
+  "pwd": "xxx"
+}
+```
+
+注意:**JsonField 只支持json 根节点,不支持嵌套节点的情况(我觉得没必要)**
+
+注意:**kotlin: 如果泛型带Any,要加上 @JvmSuppressWildcards 注解** 例如:
+
+```kotlin
+@Post("xxxx")
+@JsonBody
+suspend fun login(@JsonField("config") otherConfig: Map<String, @JvmSuppressWildcards Any?>): LoginRet
+```
+
+## 2 发布配置
+
+本项目只修改了 `retrofit`, 所以只需要发布`retrofit`即可:
+
+根目录下创建文件名:
+
+发布到nexus: 创建 `nexus.properties`
+发布到GithubPackages: 创建`github.properties`
+
+内容格式如下:
+
+```
+URL=地址
+USER_NAME=用户名
+PWD=密码
+```
+
+命令:
+
+```
+#nexus
+gradlew clean publishAllPublicationsToNexusRepository
+
+#github packages
+gradlew clean publishAllPublicationsToGithubPackagesRepository
+```
 
 
-Download
---------
-
-Download [the latest JAR][2] or grab from Maven central at the coordinates `com.squareup.retrofit2:retrofit:2.9.0`.
-
-Snapshots of the development version are available in [Sonatype's `snapshots` repository][snap].
-
-Retrofit requires at minimum Java 8+ or Android API 21+.
-
-
-R8 / ProGuard
--------------
-
-If you are using R8 the shrinking and obfuscation rules are included automatically.
-
-ProGuard users must manually add the options from
-[retrofit2.pro][proguard file].
-You might also need [rules for OkHttp][okhttp proguard] and [Okio][okio proguard] which are dependencies of this library.
-
-
-License
-=======
-
-    Copyright 2013 Square, Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-
- [1]: https://square.github.io/retrofit/
- [2]: https://search.maven.org/remote_content?g=com.squareup.retrofit2&a=retrofit&v=LATEST
- [snap]: https://oss.sonatype.org/content/repositories/snapshots/
- [proguard file]: https://github.com/square/retrofit/blob/master/retrofit/src/main/resources/META-INF/proguard/retrofit2.pro
- [okhttp proguard]: https://square.github.io/okhttp/r8_proguard/
- [okio proguard]: https://square.github.io/okio/#r8-proguard

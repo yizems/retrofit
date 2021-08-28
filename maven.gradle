@@ -16,6 +16,7 @@ void addRepo(String mavenName, String propertiesFileName) {
       maven {
         name = mavenName
         url = properties.getProperty("URL")
+        allowInsecureProtocol = true
         credentials {
           username = properties.getProperty("USER_NAME")
           password = properties.getProperty("PWD")
