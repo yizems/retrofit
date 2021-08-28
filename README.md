@@ -58,8 +58,8 @@ suspend fun login(@JsonField("config") otherConfig: Map<String, @JvmSuppressWild
 
 根目录下创建文件名:
 
-发布到nexus: 创建 `nexus.properties`
-发布到GithubPackages: 创建`github.properties`
+* 发布到nexus: 创建 `nexus.properties`
+* 发布到GithubPackages: 创建`github.properties`
 
 内容格式如下:
 
