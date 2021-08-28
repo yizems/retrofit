@@ -28,17 +28,3 @@ jar {
 }
 
 apply from: rootProject.file("maven.gradle")
-
-//publishing {
-//  repositories {
-//    maven {
-//      def releasesRepoUrl = "$buildDir/repos/releases"
-//      def snapshotsRepoUrl = "$buildDir/repos/snapshots"
-//      url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
-//      credentials {
-//        username = ""
-//        password = ""
-//      }
-//    }
-//  }
-//}
