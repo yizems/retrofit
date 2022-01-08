@@ -98,7 +98,7 @@ def addMaven(String repoName, String mavenPath, String mavenPathSnapshot, String
 }
 addEnvRepo()
 //addMaven("Nexus",file(System.getProperty("user.home")+"/.m2/nexus.properties"))
-//addMaven("AliDev", file(System.getProperty("user.home") + "/.m2/alidev.properties"))
+addMaven("AliDev", file(System.getProperty("user.home") + "/.m2/alidev.properties"))
 
 //System.getProperty("user.home")+"/.m2/alidev.properties"
 //rootProject.file("alidev.properties")
